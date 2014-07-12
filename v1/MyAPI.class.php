@@ -9,22 +9,19 @@ class MyAPI extends API
     public function __construct($request, $origin) {
       parent::__construct($request);
 
-/*
       require_once 'configuration.php';
       $this->config = new Configuration;
-*/
 
-/*
-      if (!array_key_exists('apiKey', $this->request)) {
-        throw new Exception('No API Key provided');
-      } else if (!$APIKey->verifyKey($this->request['apiKey'], $origin)) {
-        throw new Exception('Invalid API Key');
-      } else if (array_key_exists('token', $this->request) &&
-        !$User->get('token', $this->request['token'])) {
-
-        throw new Exception('Invalid User Token');
+      switch($origin)
+      {
+        case 'http://'.$this->config->access_url:
+        case 'https://'.$this->config->access_url:
+        case $this->config->access_url:
+          break;
+          
+        default:
+          throw new Exception('Invalid access domain');
       }
-*/
 
     }
 
@@ -37,16 +34,15 @@ class MyAPI extends API
         if ($this->method == 'GET') {
           require_once 'sheet.api.php';
 
-
-
-
-          //
           // http://stackoverflow.com/questions/5262857/5-minute-file-cache-in-php  
-          //
           
           $cache_file = '../cache/'.$this->verb.'.json';
-                  
-          if (file_exists($cache_file) && (filemtime($cache_file) > (time() - 60 * 5 ))) {
+          
+          $cache_time = time() - 60 * $this->config->cache_time;
+          
+          if ($this->config->dev_mode == false
+              && file_exists($cache_file)
+              && (filemtime($cache_file) > $cache_time)) {
             // Cache file is less than five minutes old. 
             // Don't bother refreshing, just use the file as-is.
             $data = file_get_contents($cache_file);
