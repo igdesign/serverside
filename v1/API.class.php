@@ -75,8 +75,50 @@ abstract class API
         }
     }
 
+    private function _cache() {
+      if ($this->config->cache_enabled == false) {
+        return true;
+      }
+
+      $dir = '../cache';
+
+      if (!file_exists($dir)) {
+        // file|folder does not exist
+
+        // make folder
+        mkdir($dir);
+
+        // check if writable
+        if (is_writable($dir)) {
+          return true;
+        } else {
+          throw new Exception('Cache created, but not writable');
+        }
+
+      } else {
+        // file|folder exists - test if folder
+        if (!is_dir($dir)) {
+          throw new Exception('Could not create cache folder, file with the same name exists');
+        } else {
+          if (is_writable($dir)) {
+            return true;
+          } else {
+            throw new Exception('Cache exists, but not writable');
+          }
+        }
+      }
+
+      return;
+
+    }
+
     public function processAPI() {
         if ((int)method_exists($this, $this->endpoint) > 0) {
+
+            if (!$this->_cache()) {
+              throw new Exception('Could not create cache');
+            }
+
             return $this->_response($this->{$this->endpoint}($this->args));
         }
         return $this->_response("No Endpoint: $this->endpoint", 404);
